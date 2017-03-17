@@ -9,6 +9,7 @@ var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
 var {authenticate} = require('./middleware/authenticate');
+const bcrypt = require('bcryptjs');
 
 var app = express();
 var port = process.env.PORT || 3000;
@@ -119,6 +120,29 @@ app.post('/users', (req, res) => {
 app.get('/users/me', authenticate, (req, res) => {
 	res.send(req.user);
 });
+
+app.post('/users/login', (req, res) => {
+	var body = _.pick(req.body, ['email', 'password']);
+
+	User.findByCredentials(body.email, body.password).then((user) => {
+		return user.generateAuthToken().then((token) => {
+			res.header('x-auth', token).send(user);
+		});
+	}).catch((e) => {
+		res.status(400).send();
+	});
+
+	// if(!user) {
+	// 	res.status(400).send({});
+	// }
+
+	// bcrypt.compare(req.password, user.password, (err, res) => {
+	// 	var token = user.generateAuthToken();
+	// 	res.header('x-auth', token).send(user);
+	// })
+
+	// res.send(body);
+})
 
 app.listen(port, () => {
 	console.log(`Started on port ${port}`);
